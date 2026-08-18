@@ -1,0 +1,45 @@
+name: Bootstrap project
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".bootstrap/**"
+      - ".github/workflows/bootstrap.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Restore cleaned project
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .bootstrap/part-* > /tmp/project.b64
+          base64 --decode /tmp/project.b64 > /tmp/project.tar.xz
+          xz --test /tmp/project.tar.xz
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          tar -xJf /tmp/project.tar.xz -C .
+          npm install --package-lock-only --ignore-scripts
+          rm -rf .bootstrap .github/workflows/bootstrap.yml
+
+      - name: Publish project tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: publish cleaned full-stack platform"
+          git push
