@@ -2,48 +2,47 @@
 
 [![CI](https://github.com/Lisovtcoff-hub/pilot-autoparts-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/Lisovtcoff-hub/pilot-autoparts-platform/actions/workflows/ci.yml)
 
-A full-stack ordering platform for a local auto-parts store. Customers can browse stock, place pickup orders and track their status. Store employees use a protected dashboard to manage products, process orders and synchronize inventory with an external ERP bridge.
+A full-stack ordering platform for a local auto-parts store. Customers can browse stock, place pickup orders, and track their status. Store employees use a protected dashboard to manage products, process orders, and synchronize inventory with an external ERP bridge.
 
-## Highlights
+> This public repository is a portfolio-safe source version. Production credentials, customer data, and operational ERP secrets are not included.
 
-- Transactional order workflow with explicit status transitions
-- Idempotent order creation to prevent duplicate submissions
-- Inventory reservation and restoration under database row locks
-- HttpOnly admin sessions with production credential validation
-- Product image uploads with size, MIME and file-signature checks
-- Email notifications through SMTP, with Mailpit included for local testing
-- Pluggable catalog provider for mock data or an external ERP bridge
-- PostgreSQL migrations with Alembic and automated backend/frontend CI
+## What the project does
+
+- provides a storefront and protected administration dashboard;
+- creates orders idempotently to prevent duplicate submissions;
+- enforces explicit transactional order-state transitions;
+- reserves and restores inventory under database row locks;
+- validates uploaded product images by size, MIME type, and file signature;
+- sends email notifications through SMTP with Mailpit for local testing;
+- supports mock catalog data or an external ERP bridge;
+- stores ERP tokens as write-only secrets;
+- validates backend, frontend, and PostgreSQL migrations in CI.
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    Browser[Next.js storefront and admin UI]
-    API[FastAPI service]
-    DB[(PostgreSQL)]
-    Mail[SMTP / Mailpit]
-    ERP[ERP bridge]
-    Files[(Uploaded images)]
-
-    Browser -->|same-origin /api proxy| API
-    API --> DB
-    API --> Mail
-    API --> ERP
-    API --> Files
+```text
+Next.js storefront and admin UI
+               |
+               | same-origin /api proxy
+               v
+        FastAPI backend
+      /       |       |       \
+PostgreSQL   SMTP   ERP bridge  uploaded images
 ```
 
-The repository contains one server-side application: FastAPI is the source of truth for products, orders, authentication and settings. Next.js is responsible only for the user interface and proxies `/api/*` requests to the backend.
+FastAPI is the source of truth for products, orders, authentication, inventory, and settings. Next.js provides the interface and proxies API requests to the backend.
 
-## Technology
+See [docs/architecture.md](docs/architecture.md).
+
+## Technology stack
 
 - **Backend:** Python 3.12, FastAPI, SQLAlchemy 2, Alembic, Pydantic
-- **Database:** PostgreSQL; SQLite is used by the test suite
+- **Database:** PostgreSQL; SQLite for tests
 - **Frontend:** Next.js 16, React 19, TypeScript
 - **Infrastructure:** Docker Compose, Mailpit, GitHub Actions
 - **Testing:** Pytest, pytest-asyncio, Ruff, ESLint, Next.js production build
 
-## Local development
+## Quick start
 
 ```bash
 cp .env.example .env
@@ -52,14 +51,14 @@ docker compose up --build
 
 Services:
 
-- Storefront: `http://localhost:3000`
-- Admin dashboard: `http://localhost:3000/admin`
-- OpenAPI documentation: `http://localhost:8000/docs`
+- storefront: `http://localhost:3000`
+- admin dashboard: `http://localhost:3000/admin`
+- OpenAPI: `http://localhost:8000/docs`
 - Mailpit: `http://localhost:8025`
 
-Local credentials come from `.env`. Change `ADMIN_PASSWORD` and `SESSION_SECRET` before sharing the environment.
+Change `ADMIN_PASSWORD` and `SESSION_SECRET` before sharing the environment.
 
-## Run without Docker
+## Development and tests
 
 Backend:
 
@@ -69,53 +68,48 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -e '.[dev]'
 alembic upgrade head
+ruff check app tests
+pytest
 uvicorn app.main:app --reload
 ```
 
-Frontend, in another terminal:
+Frontend:
 
 ```bash
 npm ci
+npm run lint
+npm run build
 npm run dev
 ```
 
-`BACKEND_INTERNAL_URL` defaults to `http://localhost:8000` during local Next.js development.
-
-## Tests and checks
-
-```bash
-cd backend
-ruff check app tests
-pytest
-
-cd ..
-npm run lint
-npm run build
-```
-
-CI also applies the full Alembic migration chain to a clean PostgreSQL database.
-
-## Order lifecycle
+## Project structure
 
 ```text
-new → confirmed → ready → completed
-  └──────────────→ cancelled
-       confirmed/ready cancellation restores inventory
+backend/        FastAPI application, migrations, integrations, and tests
+app/            Next.js storefront and administration routes
+components/     shared React components
+public/         static assets
+docs/           architecture and deployment documentation
+compose.yaml    local PostgreSQL, backend, frontend, and Mailpit stack
 ```
 
-An order is created without immediately decrementing stock. Confirmation reserves inventory, and cancellation from a reserved state restores it. Invalid transitions return `409 Conflict`.
+## Security and operational notes
 
-## ERP integration
+- Administrator sessions use HttpOnly cookies and production credential validation.
+- The backend refuses to start in production with placeholder credentials.
+- Image uploads are validated before storage.
+- ERP tokens are never returned to the browser.
+- Production deployment requires HTTPS, secure cookies, strong secrets, and edge rate limiting.
+- The ERP bridge must be deployed close to and authorized by the store's accounting system.
 
-`CatalogProvider` defines the integration boundary. The included implementations are:
+See [docs/deployment.md](docs/deployment.md) for additional details.
 
-- `MockCatalogProvider` for local development
-- `InfoEnterpriseProvider` for an outbound bridge installed near the store ERP
+## Project status
 
-The bridge URL and token are managed from the admin dashboard. Tokens are write-only: the API never returns the stored secret to the browser.
+The repository demonstrates the complete ordering workflow, including inventory reservation, cancellation recovery, administration, notifications, and an explicit ERP integration boundary.
 
-## Production notes
+## Author
 
-Set `APP_ENV=production`, use HTTPS, enable `COOKIE_SECURE`, and provide strong values for `ADMIN_PASSWORD` and `SESSION_SECRET`. The backend refuses to start in production with placeholder credentials. Put rate limiting for login and public order-status endpoints at the reverse proxy or gateway.
+Sergey Inozemtsev — Python backend developer
 
-See [docs/architecture.md](docs/architecture.md) and [docs/deployment.md](docs/deployment.md) for additional details.
+GitHub: https://github.com/Lisovtcoff-hub
