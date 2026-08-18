@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: pilot_test
+          POSTGRES_USER: pilot
+          POSTGRES_PASSWORD: test-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pilot -d pilot_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      APP_ENV: testing
+      DATABASE_URL: postgresql+asyncpg://pilot:test-password@127.0.0.1:5432/pilot_test
+      ADMIN_USERNAME: ci-admin
+      ADMIN_PASSWORD: ci-password-not-for-production
+      SESSION_SECRET: ci-session-secret-not-for-production-use-only
+      FRONTEND_ORIGIN: http://localhost:3000
+      SMTP_HOST: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+      - name: Install backend
+        run: pip install -e './backend[dev]'
+      - name: Lint backend
+        run: ruff check backend/app backend/tests
+      - name: Validate migrations
+        run: alembic -c backend/alembic.ini upgrade head
+      - name: Test backend
+        working-directory: backend
+        run: pytest -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+        env:
+          BACKEND_INTERNAL_URL: http://localhost:8000
