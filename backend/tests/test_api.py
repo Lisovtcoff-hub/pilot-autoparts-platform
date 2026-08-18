@@ -85,8 +85,9 @@ async def test_strict_status_flow_and_stock_restore(admin_client: httpx.AsyncCli
     assert ready.status_code == 200
     cancelled = await admin_client.patch(f"/api/orders/{order['id']}/status", json={"status": "cancelled", "note": "Клиент отказался"})
     assert cancelled.status_code == 200
-    assert cancelled.json()["order"]["status"] == "cancelled"
-    assert len(cancelled.json()["order"]["history"]) == 4
+    cancelled_order = cancelled.json()
+    assert cancelled_order["status"] == "cancelled"
+    assert len(cancelled_order["history"]) == 4
     stock_after_cancel = (await admin_client.get("/api/products")).json()["products"][0]["stock"]
     assert stock_after_cancel == initial_stock
     assert (await admin_client.patch(f"/api/orders/{order['id']}/status", json={"status": "new"})).status_code == 409
