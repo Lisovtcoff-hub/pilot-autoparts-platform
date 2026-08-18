@@ -29,10 +29,15 @@ jobs:
           cat .bootstrap/part-* > /tmp/project.b64
           base64 --decode /tmp/project.b64 > /tmp/project.tar.xz
           xz --test /tmp/project.tar.xz
+          cp -a .bootstrap /tmp/bootstrap-parts
+          cp .github/workflows/bootstrap.yml /tmp/bootstrap.yml
           find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
           tar -xJf /tmp/project.tar.xz -C .
+          mv .github/workflows/ci.yml /tmp/ci.yml
+          mkdir -p .github/workflows
+          cp /tmp/bootstrap.yml .github/workflows/bootstrap.yml
+          cp -a /tmp/bootstrap-parts .bootstrap
           npm install --package-lock-only --ignore-scripts
-          rm -rf .bootstrap .github/workflows/bootstrap.yml
 
       - name: Publish project tree
         shell: bash
