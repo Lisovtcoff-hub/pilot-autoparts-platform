@@ -2,21 +2,26 @@
 
 [![CI](https://github.com/lisovcoff/pilot-autoparts-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/lisovcoff/pilot-autoparts-platform/actions/workflows/ci.yml)
 
-A full-stack ordering platform for a local auto-parts store. Customers can browse stock, place pickup orders, and track their status. Store employees use a protected dashboard to manage products, process orders, and synchronize inventory with an external ERP bridge.
+Full-stack ordering platform for a local auto-parts store. Customers browse stock and place pickup orders, while store staff manage products, orders, and ERP synchronization from a protected dashboard.
 
-> This public repository is a portfolio-safe source version. Production credentials, customer data, and operational ERP secrets are not included.
+## Highlights
 
-## What the project does
+- storefront and protected administration dashboard;
+- idempotent order creation to prevent duplicate submissions;
+- explicit transactional order-state transitions;
+- inventory reservation and restore under database row locks;
+- product image validation by size, MIME type, and file signature;
+- SMTP notifications with Mailpit for local testing;
+- mock catalog mode or external ERP bridge;
+- CI validation for backend, frontend, and PostgreSQL migrations.
 
-- provides a storefront and protected administration dashboard;
-- creates orders idempotently to prevent duplicate submissions;
-- enforces explicit transactional order-state transitions;
-- reserves and restores inventory under database row locks;
-- validates uploaded product images by size, MIME type, and file signature;
-- sends email notifications through SMTP with Mailpit for local testing;
-- supports mock catalog data or an external ERP bridge;
-- stores ERP tokens as write-only secrets;
-- validates backend, frontend, and PostgreSQL migrations in CI.
+## Stack
+
+- **Backend:** Python 3.12, FastAPI, SQLAlchemy 2, Alembic, Pydantic
+- **Database:** PostgreSQL; SQLite for tests
+- **Frontend:** Next.js 16, React 19, TypeScript
+- **Infrastructure:** Docker Compose, Mailpit, GitHub Actions
+- **Testing:** Pytest, pytest-asyncio, Ruff, ESLint, Next.js production build
 
 ## Architecture
 
@@ -32,17 +37,9 @@ PostgreSQL   SMTP   ERP bridge  uploaded images
 
 FastAPI is the source of truth for products, orders, authentication, inventory, and settings. Next.js provides the interface and proxies API requests to the backend.
 
-See [docs/architecture.md](docs/architecture.md).
+Additional notes: [architecture](docs/architecture.md), [deployment](docs/deployment.md).
 
-## Technology stack
-
-- **Backend:** Python 3.12, FastAPI, SQLAlchemy 2, Alembic, Pydantic
-- **Database:** PostgreSQL; SQLite for tests
-- **Frontend:** Next.js 16, React 19, TypeScript
-- **Infrastructure:** Docker Compose, Mailpit, GitHub Actions
-- **Testing:** Pytest, pytest-asyncio, Ruff, ESLint, Next.js production build
-
-## Quick start
+## Run locally
 
 ```bash
 cp .env.example .env
@@ -82,7 +79,7 @@ npm run build
 npm run dev
 ```
 
-## Project structure
+## Repository layout
 
 ```text
 backend/        FastAPI application, migrations, integrations, and tests
@@ -93,23 +90,8 @@ docs/           architecture and deployment documentation
 compose.yaml    local PostgreSQL, backend, frontend, and Mailpit stack
 ```
 
-## Security and operational notes
+## Notes
 
-- Administrator sessions use HttpOnly cookies and production credential validation.
-- The backend refuses to start in production with placeholder credentials.
-- Image uploads are validated before storage.
-- ERP tokens are never returned to the browser.
+- This public repository excludes production credentials, customer data, and operational ERP secrets.
+- ERP tokens are stored as write-only secrets and are never returned to the browser.
 - Production deployment requires HTTPS, secure cookies, strong secrets, and edge rate limiting.
-- The ERP bridge must be deployed close to and authorized by the store's accounting system.
-
-See [docs/deployment.md](docs/deployment.md) for additional details.
-
-## Project status
-
-The repository demonstrates the complete ordering workflow, including inventory reservation, cancellation recovery, administration, notifications, and an explicit ERP integration boundary.
-
-## Author
-
-Sergey Inozemtsev — Python backend developer
-
-GitHub: https://github.com/lisovcoff
