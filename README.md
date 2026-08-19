@@ -1,6 +1,6 @@
 # PILOT Auto Parts Platform
 
-[![CI](https://github.com/Lisovtcoff-hub/pilot-autoparts-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/Lisovtcoff-hub/pilot-autoparts-platform/actions/workflows/ci.yml)
+[![CI](https://github.com/lisovcoff/pilot-autoparts-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/lisovcoff/pilot-autoparts-platform/actions/workflows/ci.yml)
 
 A full-stack ordering platform for a local auto-parts store. Customers can browse stock, place pickup orders, and track their status. Store employees use a protected dashboard to manage products, process orders, and synchronize inventory with an external ERP bridge.
 
@@ -112,4 +112,4 @@ The repository demonstrates the complete ordering workflow, including inventory 
 
 Sergey Inozemtsev — Python backend developer
 
-GitHub: https://github.com/Lisovtcoff-hub
+GitHub: https://github.com/lisovcoff
